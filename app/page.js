@@ -1,8 +1,7 @@
 export default function Home() {
   return (
-    <main style={{ padding: 40 }}>
+    <main>
       <h1>AI Image to Video</h1>
-      <p>Homepage is working 🚀</p>
     </main>
   );
 }
