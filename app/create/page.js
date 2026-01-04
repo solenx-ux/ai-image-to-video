@@ -24,11 +24,38 @@ export default function CreatePage() {
   }, [router]);
 
   if (loading) return <p>Checking login...</p>;
+return (
+  <div style={{ padding: 40, maxWidth: 600 }}>
+    <h1>Create Video</h1>
 
-  return (
-    <div style={{ padding: 40 }}>
-      <h1>Create Video</h1>
-      <p>You are logged in. This page is protected.</p>
-    </div>
-  );
-}
+    <label>
+      Upload Image
+      <br />
+      <input type="file" accept="image/*" />
+    </label>
+
+    <br /><br />
+
+    <label>
+      Prompt
+      <br />
+      <textarea
+        placeholder="Describe how the image should turn into a video"
+        rows={4}
+        style={{ width: "100%" }}
+      />
+    </label>
+
+    <br /><br />
+
+    <button
+      style={{
+        padding: "10px 20px",
+        cursor: "pointer"
+      }}
+      onClick={() => alert("Next step: upload + AI")}
+    >
+      Generate Video
+    </button>
+  </div>
+);
