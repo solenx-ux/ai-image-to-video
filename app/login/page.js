@@ -5,31 +5,23 @@ import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState('')
 
-  const handleLogin = async () => {
-    if (!email) {
-      setMessage('Please enter your email')
-      return
-    }
-
-    setLoading(true)
-    setMessage('')
+  const signIn = async () => {
+    setStatus('Sending magic link...')
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin + '/create',
-      },
+        emailRedirectTo: `${window.location.origin}/create`
+      }
     })
 
-    setLoading(false)
-
     if (error) {
-      setMessage(error.message)
+      console.error(error)
+      setStatus('Login failed')
     } else {
-      setMessage('Check your email for the login link')
+      setStatus('Check your email for login link')
     }
   }
 
@@ -42,20 +34,16 @@ export default function LoginPage() {
         placeholder="Enter your email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        style={{ padding: 10, width: '100%' }}
+        style={{ width: '100%', padding: 8 }}
       />
 
       <br /><br />
 
-      <button
-        onClick={handleLogin}
-        disabled={loading}
-        style={{ padding: '10px 20px', cursor: 'pointer' }}
-      >
-        {loading ? 'Sending link…' : 'Send Login Link'}
+      <button onClick={signIn}>
+        Send Login Link
       </button>
 
-      <p>{message}</p>
+      <p>{status}</p>
     </div>
   )
 }
