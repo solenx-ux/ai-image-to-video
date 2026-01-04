@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -9,54 +9,71 @@ const supabase = createClient(
 );
 
 export default function CreatePage() {
+  const [user, setUser] = useState(null);
   const [file, setFile] = useState(null);
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState("");
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+  }, []);
+
+  const login = async () => {
+    const email = prompt("Enter your email to login");
+    if (!email) return;
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+    });
+
+    if (error) {
+      alert("Login failed");
+    } else {
+      alert("Check your email for login link");
+    }
+  };
+
   const handleUpload = async () => {
-    try {
-      setStatus("Uploading...");
+    if (!user) {
+      setStatus("Not logged in");
+      return;
+    }
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+    if (!file) {
+      setStatus("No file selected");
+      return;
+    }
 
-      if (userError || !user) {
-        setStatus("Not logged in");
-        return;
-      }
+    setStatus("Uploading...");
 
-      if (!file) {
-        setStatus("No file selected");
-        return;
-      }
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/${Date.now()}.${ext}`;
 
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from("IMAGES")
+      .upload(path, file);
 
-      const { error: uploadError } = await supabase.storage
-        .from("images")
-        .upload(filePath, file, {
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error(uploadError);
-        setStatus("Upload failed");
-        return;
-      }
-
+    if (error) {
+      console.error(error);
+      setStatus("Upload failed");
+    } else {
       setStatus("Upload successful ✅");
-    } catch (err) {
-      console.error(err);
-      setStatus("Unexpected error");
     }
   };
 
   return (
     <div style={{ padding: 40, maxWidth: 600 }}>
       <h1>Create Video</h1>
+
+      {!user && (
+        <button onClick={login} style={{ marginBottom: 20 }}>
+          Login
+        </button>
+      )}
+
+      {user && <p>Logged in as: {user.email}</p>}
 
       <label>
         Upload Image
