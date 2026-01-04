@@ -1,95 +1,87 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function CreatePage() {
-  const [user, setUser] = useState(null)
-  const [file, setFile] = useState(null)
-  const [prompt, setPrompt] = useState('')
-  const [status, setStatus] = useState('')
+  const [user, setUser] = useState(null);
+  const [file, setFile] = useState(null);
+  const [prompt, setPrompt] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-    })
-  }, [])
+      setUser(data.user);
+    });
+  }, []);
 
   const uploadImage = async () => {
-    if (!file) {
-      setStatus('Please select an image')
-      return
-    }
+    setMessage("");
 
     if (!user) {
-      setStatus('Not logged in')
-      return
+      setMessage("Not logged in");
+      return;
     }
 
-    setStatus('Uploading image...')
+    if (!file) {
+      setMessage("No file selected");
+      return;
+    }
 
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`
+    const filePath = `images/${user.id}/${Date.now()}-${file.name}`;
 
     const { error } = await supabase.storage
-      .from('IMAGES')
-      .upload(fileName, file)
+      .from("images")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
 
     if (error) {
-      console.error(error)
-      setStatus('Upload failed')
-      return
+      console.error(error);
+      setMessage(error.message);
+      return;
     }
 
-    const { data } = supabase.storage
-      .from('IMAGES')
-      .getPublicUrl(fileName)
-
-    console.log('Image URL:', data.publicUrl)
-
-    setStatus('Image uploaded successfully')
-  }
+    setMessage("Upload successful");
+  };
 
   return (
-    <div style={{ padding: 40, maxWidth: 600 }}>
+    <div style={{ padding: 40 }}>
       <h1>Create Video</h1>
 
-      {user && (
-        <p>
-          Logged in as:<br />
-          {user.email}
-        </p>
+      {user ? (
+        <p>Logged in as: {user.email}</p>
+      ) : (
+        <p>Not logged in</p>
       )}
 
-      <label>
-        Upload Image<br />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files[0])}
-        />
-      </label>
+      <input
+        type="file"
+        accept="image/png,image/jpeg"
+        onChange={(e) => setFile(e.target.files[0])}
+      />
 
       <br /><br />
 
-      <label>
-        Prompt<br />
-        <textarea
-          placeholder="Describe how the image should turn into a video"
-          rows={4}
-          style={{ width: '100%' }}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
-      </label>
+      <textarea
+        placeholder="Describe how the image should turn into a video"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        rows={4}
+        cols={50}
+      />
 
       <br /><br />
 
-      <button onClick={uploadImage}>
-        Upload Image
-      </button>
+      <button onClick={uploadImage}>Upload Image</button>
 
-      <p>{status}</p>
+      <p>{message}</p>
     </div>
-  )
+  );
 }
