@@ -1,10 +1,15 @@
-export default function Home() {
-  return (
-    <main style={{ padding: 40 }}>
-      <h1>AI Image to Video</h1>
-      <p>Turn images into cinematic videos using AI.</p>
+"use client";
+import { useRouter } from "next/navigation";
 
-      <button>Create Video</button>
-    </main>
+export default function Home() {
+  const router = useRouter();
+
+  return (
+    <button
+      onClick={() => router.push("/create")}
+      style={{ padding: "10px 16px", cursor: "pointer" }}
+    >
+      Create video
+    </button>
   );
 }
