@@ -1,7 +1,5 @@
 'use client'
 
-import { supabase } from '@/lib/supabaseClient'
-
 export default function CreatePage() {
   return (
     <div style={{ padding: 40, maxWidth: 600 }}>
