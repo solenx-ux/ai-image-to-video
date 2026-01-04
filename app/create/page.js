@@ -1,39 +1,57 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 export default function CreatePage() {
   const [file, setFile] = useState(null);
   const [prompt, setPrompt] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState("");
 
-  const uploadImage = async () => {
-    if (!file) {
-      alert("Please select an image");
-      return;
+  const handleUpload = async () => {
+    try {
+      setStatus("Uploading...");
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        setStatus("Not logged in");
+        return;
+      }
+
+      if (!file) {
+        setStatus("No file selected");
+        return;
+      }
+
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("IMAGES")
+        .upload(filePath, file, {
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error(uploadError);
+        setStatus("Upload failed");
+        return;
+      }
+
+      setStatus("Upload successful ✅");
+    } catch (err) {
+      console.error(err);
+      setStatus("Unexpected error");
     }
-
-    setLoading(true);
-    setMessage("");
-
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `uploads/${fileName}`;
-
-    const { error } = await supabase.storage
-      .from("images")
-      .upload(filePath, file);
-
-    if (error) {
-      console.error(error);
-      setMessage("Upload failed");
-    } else {
-      setMessage("Image uploaded successfully");
-    }
-
-    setLoading(false);
   };
 
   return (
@@ -68,14 +86,9 @@ export default function CreatePage() {
       <br />
       <br />
 
-      <button onClick={uploadImage} disabled={loading}>
-        {loading ? "Uploading..." : "Upload Image"}
-      </button>
+      <button onClick={handleUpload}>Upload Image</button>
 
-      <br />
-      <br />
-
-      {message && <p>{message}</p>}
+      <p>{status}</p>
     </div>
   );
 }
