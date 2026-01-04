@@ -1,8 +1,13 @@
 'use client'
 
+import { supabase } from '@/lib/supabaseClient'
+
 export default function CreatePage() {
-  const handleGenerate = () => {
-    alert('READY TO UPLOAD IMAGE')
+  const testSupabase = async () => {
+    const { data, error } = await supabase.auth.getSession()
+    console.log('Supabase session:', data)
+    console.log('Supabase error:', error)
+    alert('SUPABASE TEST CLICKED — CHECK CONSOLE')
   }
 
   return (
@@ -31,9 +36,9 @@ export default function CreatePage() {
 
       <button
         style={{ padding: '10px 20px', cursor: 'pointer' }}
-        onClick={handleGenerate}
+        onClick={testSupabase}
       >
-        Generate Video
+        Test Supabase
       </button>
     </div>
   )
