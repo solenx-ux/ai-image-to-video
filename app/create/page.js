@@ -36,7 +36,7 @@ export default function CreatePage() {
       const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("IMAGES")
+        .from("images")
         .upload(filePath, file, {
           upsert: false,
         });
