@@ -1,49 +1,35 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [status, setStatus] = useState('')
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
 
-  const signIn = async () => {
-    setStatus('Sending magic link...')
-
+  const login = async () => {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/create`
-      }
-    })
+        emailRedirectTo: `${window.location.origin}/create`,
+      },
+    });
 
-    if (error) {
-      console.error(error)
-      setStatus('Login failed')
-    } else {
-      setStatus('Check your email for login link')
-    }
-  }
+    if (error) setMessage(error.message);
+    else setMessage('Check your email for the login link');
+  };
 
   return (
-    <div style={{ padding: 40, maxWidth: 400 }}>
+    <div style={{ padding: 40 }}>
       <h1>Login</h1>
-
       <input
-        type="email"
-        placeholder="Enter your email"
+        placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        style={{ width: '100%', padding: 8 }}
       />
-
       <br /><br />
-
-      <button onClick={signIn}>
-        Send Login Link
-      </button>
-
-      <p>{status}</p>
+      <button onClick={login}>Send login link</button>
+      <p>{message}</p>
     </div>
-  )
+  );
 }
