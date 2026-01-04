@@ -1,18 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function CreatePage() {
   const [user, setUser] = useState(null);
   const [file, setFile] = useState(null);
-  const [prompt, setPrompt] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -21,34 +16,31 @@ export default function CreatePage() {
   }, []);
 
   const uploadImage = async () => {
-    setMessage("");
+    setError('');
+    setSuccess('');
 
     if (!user) {
-      setMessage("Not logged in");
+      setError('Not logged in');
       return;
     }
 
     if (!file) {
-      setMessage("No file selected");
+      setError('No file selected');
       return;
     }
 
-    const filePath = `images/${user.id}/${Date.now()}-${file.name}`;
+    const filePath = `${user.id}/${Date.now()}-${file.name}`;
 
     const { error } = await supabase.storage
-      .from("images")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+      .from('images')
+      .upload(filePath, file);
 
     if (error) {
-      console.error(error);
-      setMessage(error.message);
+      setError(error.message);
       return;
     }
 
-    setMessage("Upload successful");
+    setSuccess('Upload successful');
   };
 
   return (
@@ -63,7 +55,7 @@ export default function CreatePage() {
 
       <input
         type="file"
-        accept="image/png,image/jpeg"
+        accept="image/png,image/jpeg,image/jpg"
         onChange={(e) => setFile(e.target.files[0])}
       />
 
@@ -71,17 +63,15 @@ export default function CreatePage() {
 
       <textarea
         placeholder="Describe how the image should turn into a video"
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        rows={4}
-        cols={50}
+        style={{ width: 400, height: 100 }}
       />
 
       <br /><br />
 
       <button onClick={uploadImage}>Upload Image</button>
 
-      <p>{message}</p>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {success && <p style={{ color: 'green' }}>{success}</p>}
     </div>
   );
 }
