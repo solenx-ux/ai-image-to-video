@@ -2,6 +2,7 @@ export default function CreatePage() {
   return (
     <div style={{ padding: 40, maxWidth: 600 }}>
       <h1>Create Video</h1>
+      <p>If you see this, routing works.</p>
 
       <label>
         Upload Image
