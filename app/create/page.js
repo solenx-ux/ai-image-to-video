@@ -1,8 +1,9 @@
+"use client";
+
 export default function CreatePage() {
   return (
     <div style={{ padding: 40, maxWidth: 600 }}>
       <h1>Create Video</h1>
-      <p>If you see this, routing works.</p>
 
       <label>
         Upload Image
@@ -26,7 +27,7 @@ export default function CreatePage() {
 
       <button
         style={{ padding: "10px 20px", cursor: "pointer" }}
-        onClick={() => alert("UI works")}
+        onClick={() => alert("UI WORKS")}
       >
         Generate Video
       </button>
