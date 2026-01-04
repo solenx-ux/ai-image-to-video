@@ -1,47 +1,92 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function CreatePage() {
   const [user, setUser] = useState(null);
   const [file, setFile] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [prompt, setPrompt] = useState("");
+  const [message, setMessage] = useState("");
+  const [videoUrl, setVideoUrl] = useState(null);
 
+  // Get logged-in user
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
     });
   }, []);
 
-  const uploadImage = async () => {
-    setError('');
-    setSuccess('');
-
-    if (!user) {
-      setError('Not logged in');
+  // Upload handler
+  async function handleUpload() {
+    if (!file || !user) {
+      setMessage("Missing file or user");
       return;
     }
 
-    if (!file) {
-      setError('No file selected');
+    setMessage("Uploading image...");
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    // 1. Upload image
+    const { error: uploadError } = await supabase.storage
+      .from("images")
+      .upload(fileName, file);
+
+    if (uploadError) {
+      setMessage(uploadError.message);
       return;
     }
 
-    const filePath = `${user.id}/${Date.now()}-${file.name}`;
-
-    const { error } = await supabase.storage
-      .from('images')
-      .upload(filePath, file);
+    // 2. Insert video row and GET ID
+    const { data, error } = await supabase
+      .from("videos")
+      .insert({
+        user_id: user.id,
+        image_path: fileName,
+        status: "uploaded",
+      })
+      .select()
+      .single();
 
     if (error) {
-      setError(error.message);
+      setMessage(error.message);
       return;
     }
 
-    setSuccess('Upload successful');
-  };
+    const videoId = data.id;
+
+    // 3. Set processing
+    await supabase
+      .from("videos")
+      .update({ status: "processing" })
+      .eq("id", videoId);
+
+    setMessage("Processing video...");
+
+    // 4. Fake AI generation
+    fakeGenerateVideo(videoId);
+  }
+
+  // Fake AI generator
+  async function fakeGenerateVideo(videoId) {
+    await new Promise((r) => setTimeout(r, 5000));
+
+    const demoVideo =
+      "https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4";
+
+    await supabase
+      .from("videos")
+      .update({
+        status: "done",
+        video_url: demoVideo,
+      })
+      .eq("id", videoId);
+
+    setVideoUrl(demoVideo);
+    setMessage("Video ready ✅");
+  }
 
   return (
     <div style={{ padding: 40 }}>
@@ -55,7 +100,6 @@ export default function CreatePage() {
 
       <input
         type="file"
-        accept="image/png,image/jpeg,image/jpg"
         onChange={(e) => setFile(e.target.files[0])}
       />
 
@@ -63,15 +107,25 @@ export default function CreatePage() {
 
       <textarea
         placeholder="Describe how the image should turn into a video"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
         style={{ width: 400, height: 100 }}
       />
 
       <br /><br />
 
-      <button onClick={uploadImage}>Upload Image</button>
+      <button onClick={handleUpload}>Upload Image</button>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
+      <p>{message}</p>
+
+      {videoUrl && (
+        <video
+          src={videoUrl}
+          controls
+          width="400"
+          style={{ marginTop: 20 }}
+        />
+      )}
     </div>
   );
 }
