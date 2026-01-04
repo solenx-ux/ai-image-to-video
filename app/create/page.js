@@ -1,83 +1,68 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function CreatePage() {
-  const [user, setUser] = useState(null);
-  const [file, setFile] = useState(null);
-  const [prompt, setPrompt] = useState("");
-  const [status, setStatus] = useState("");
+  const [user, setUser] = useState(null)
+  const [file, setFile] = useState(null)
+  const [prompt, setPrompt] = useState('')
+  const [status, setStatus] = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-    });
-  }, []);
+      setUser(data.user)
+    })
+  }, [])
 
-  const login = async () => {
-    const email = prompt("Enter your email to login");
-    if (!email) return;
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-    });
-
-    if (error) {
-      alert("Login failed");
-    } else {
-      alert("Check your email for login link");
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!user) {
-      setStatus("Not logged in");
-      return;
-    }
-
+  const uploadImage = async () => {
     if (!file) {
-      setStatus("No file selected");
-      return;
+      setStatus('Please select an image')
+      return
     }
 
-    setStatus("Uploading...");
+    if (!user) {
+      setStatus('Not logged in')
+      return
+    }
 
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/${Date.now()}.${ext}`;
+    setStatus('Uploading image...')
+
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`
 
     const { error } = await supabase.storage
-      .from("IMAGES")
-      .upload(path, file);
+      .from('IMAGES')
+      .upload(fileName, file)
 
     if (error) {
-      console.error(error);
-      setStatus("Upload failed");
-    } else {
-      setStatus("Upload successful ✅");
+      console.error(error)
+      setStatus('Upload failed')
+      return
     }
-  };
+
+    const { data } = supabase.storage
+      .from('IMAGES')
+      .getPublicUrl(fileName)
+
+    console.log('Image URL:', data.publicUrl)
+
+    setStatus('Image uploaded successfully')
+  }
 
   return (
     <div style={{ padding: 40, maxWidth: 600 }}>
       <h1>Create Video</h1>
 
-      {!user && (
-        <button onClick={login} style={{ marginBottom: 20 }}>
-          Login
-        </button>
+      {user && (
+        <p>
+          Logged in as:<br />
+          {user.email}
+        </p>
       )}
 
-      {user && <p>Logged in as: {user.email}</p>}
-
       <label>
-        Upload Image
-        <br />
+        Upload Image<br />
         <input
           type="file"
           accept="image/*"
@@ -85,27 +70,26 @@ export default function CreatePage() {
         />
       </label>
 
-      <br />
-      <br />
+      <br /><br />
 
       <label>
-        Prompt
-        <br />
+        Prompt<br />
         <textarea
-          rows={4}
-          style={{ width: "100%" }}
           placeholder="Describe how the image should turn into a video"
+          rows={4}
+          style={{ width: '100%' }}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
       </label>
 
-      <br />
-      <br />
+      <br /><br />
 
-      <button onClick={handleUpload}>Upload Image</button>
+      <button onClick={uploadImage}>
+        Upload Image
+      </button>
 
       <p>{status}</p>
     </div>
-  );
+  )
 }
